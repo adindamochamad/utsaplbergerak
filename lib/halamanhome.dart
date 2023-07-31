@@ -1,33 +1,68 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:utsmobapps/main.dart';
 import 'halamanmer.dart';
 import 'halamanprj.dart';
 import 'halamantij.dart';
+import 'package:http/http.dart' as http;
 
-class HalamanHome extends StatelessWidget {
+class HalamanHome extends StatefulWidget {
   const HalamanHome({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final List<String> judulrute = <String>["PRJ", "MER", "TIJ"];
-    final List<String> destinasi = <String>[
-      "Purabaya - Rajawali\nRajawali - Purabaya",
-      "Kenpark - Gunung Anyar\nGunung Anyar - Kenpark",
-      "UNESA - Joyoboyo\nJoyoboyo - UNESA"
-    ];
-    final List<String> jaraktempuh = <String>["16 km", "16 km", "12 km"];
-    final List<String> halte = <String>["20 Halte", '24 Halte', "18 Halte"];
-    final List<String> harga = <String>[
-      "Rp. 7.000.00",
-      "Rp. 7.000.00",
-      "Rp. 7.000.00"
-    ];
-    final List<Widget> halaman = <Widget>[
-      const HalamanPRJ(),
-      const HalamanMER(),
-      const HalamanTIJ(),
-    ];
+  // ignore: library_private_types_in_public_api
+  _HalamanHomeState createState() => _HalamanHomeState();
+}
 
+class _HalamanHomeState extends State<HalamanHome> {
+  List<String> judulrute = [];
+  List<String> destinasi = <String>[
+    "Purabaya - Rajawali\nRajawali - Purabaya",
+    "Kenpark - Gunung Anyar\nGunung Anyar - Kenpark",
+    "UNESA - Joyoboyo\nJoyoboyo - UNESA"
+  ];
+  List<String> jaraktempuh = <String>["16 km", "16 km", "12 km"];
+  List<String> halte = <String>["20 Halte", '24 Halte', "18 Halte"];
+  List<String> harga = <String>["Rp. 7.000.00", "Rp. 7.000.00", "Rp. 7.000.00"];
+  List<Widget> halaman = <Widget>[
+    const HalamanPRJ(),
+    const HalamanMER(),
+    const HalamanTIJ(),
+  ];
+  int totalData = 0;
+  // ignore: prefer_typing_uninitialized_variables
+  var dataJson;
+
+  @override
+  void initState() {
+    super.initState();
+    getDatafromStrapi();
+  }
+
+  void getDatafromStrapi() async {
+    Map<String, String> headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    };
+    var response = await http.get(
+        Uri.parse('http://localhost:1337/api/suroboyo-buses'),
+        headers: headers);
+
+    if (response.statusCode == 200) {
+      var decodedData = jsonDecode(response.body);
+      setState(() {
+        dataJson = decodedData["data"];
+        totalData = decodedData["meta"]["pagination"]["total"];
+        for (var i = 0; i < totalData; i++) {
+          judulrute.add(dataJson[i]
+              ["judul_rute"]); // Ambil judul_rute dari data JSON Strapi
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Center(child: Text("RUTE")),
